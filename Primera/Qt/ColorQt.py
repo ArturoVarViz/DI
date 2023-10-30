@@ -26,8 +26,8 @@ class PrimeraVentana(QMainWindow):
         caja1.addLayout(caja2)
         caja1.addWidget(CajaDeColor("green"))
 
-        caja3.addWidget(CajaDeColor("blue"))
-        caja3.addWidget(CajaDeColor("orange"))
+        caja3.addWidget(CajaDeColor("red"))
+        caja3.addWidget(CajaDeColor("purple"))
 
         caja1.addLayout(caja3)  # Añadido para agregar la tercera caja horizontalmente
 
