@@ -26,4 +26,4 @@ class GridWindow(Gtk.Window):
 
         botonTarjeta =Gtk.StackSwitcher()
         botonTarjeta.set_stack(tarjeta)
-        cajaV.pack_Start(boto)
+        cajaV.pack_Start(botonTarjeta)

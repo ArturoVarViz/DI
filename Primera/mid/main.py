@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
-from mido import Message, MidiFile, MidiTrack
+from mido import Message, MidiFile, MidiTrack, MetaMessage, bpm2tempo
 
 # Mapeo de letras a notas
 note_map = {
@@ -10,8 +10,8 @@ note_map = {
     'D': 62,  # D en la 5ª octava
     'E': 63,  # Eb en la 5ª octava
     'F': 64,  # E en la 5ª octava
-    'G': 66,
-    'H': 67,
+    'G': 66,  # Gb en la 5ª octava
+    'H': 67,  # G en la 5ª octava
     'I': 68,
     'J': 69,
     'K': 70,
@@ -37,11 +37,20 @@ note_map = {
 def text_to_midi(text):
     mid = MidiFile()
     track = MidiTrack()
+
+    # Añadir metadatos
+    track.append(MetaMessage('set_tempo', tempo=bpm2tempo(60)))  # Ajusta el tempo a BPM que desees.
+    track.append(MetaMessage('text', text='Erick Feles'))  # Añade el autor
+
     mid.tracks.append(track)
+
+    note = None  # Define note antes del bucle
 
     for char in text:
         if char == " ":
-            track.append(Message('note_off', note=note, velocity=64, time=64))  # tiempo de silencio
+            if note is not None:  # Comprueba si note es None antes de apagar la nota
+                track.append(Message('note_off', note=note, velocity=64, time=64))
+            note = None  # Resetea note a None después de apagar la nota
         else:
             note = note_map.get(char.upper())
             if note:
@@ -55,9 +64,9 @@ def save_midi():
     text = text_entry.get("1.0", tk.END)
 
     for i, line in enumerate(text.split('\n')):
-        if line.strip():  # Verifica si la línea no está vacía
+        if line.strip():
             mid = text_to_midi(line)
-            file_path = filedialog.asksaveasfilename(defaultextension=f"_line{i + 1}.mid")
+            file_path = filedialog.asksaveasfilename(defaultextension=".mid")
             if file_path:
                 mid.save(file_path)
 
