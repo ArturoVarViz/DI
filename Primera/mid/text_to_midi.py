@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import filedialog
 from mido import Message, MidiFile, MidiTrack, MetaMessage, bpm2tempo
 
-
 # Mapeo de letras a notas
 note_map = {
     'A': 57,  # A en la 4ª octava
@@ -32,7 +31,6 @@ note_map = {
     'X': 83,
     'Y': 84,
     'Z': 85,
-
 }
 
 # Mapeo de letras a tiempos en milisegundos

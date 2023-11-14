@@ -22,3 +22,6 @@ def create_gui():
     save_button.pack()
 
     root.mainloop()
+
+if __name__ == "__main__":
+    create_gui()
