@@ -1,4 +1,4 @@
-import sys
+ import sys
 
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget
 from PyQt6.QtGui import QPixmap
