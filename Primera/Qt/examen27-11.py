@@ -68,7 +68,10 @@ class FiestraPrincipal (QMainWindow):
         txtTratamento = QLineEdit()
         self.txtTelefono = QLineEdit()
         lblFormato = QLabel("Formato")
-        cmbFormato = QComboBox()
+        self.cmbFormato = QComboBox()
+        formatos = ["","color", "estructura", "tamaño"]
+        self.cmbFormato.addItems(formatos)
+        self.cmbFormato.activated.connect(self.mostrar_formato_seleccionado)
 
         cajah1.addWidget(self.lblNome)
         cajah1.addWidget(self.txtNome)
@@ -81,7 +84,7 @@ class FiestraPrincipal (QMainWindow):
         cajah2.addWidget(self.txtTelefono)
 
         cajah3.addWidget(lblFormato)
-        cajah3.addWidget(cmbFormato)
+        cajah3.addWidget(self.cmbFormato)
 
         self. lstDireccionC = QListWidget()
         self.lstDireccionC.setFixedSize(350,200)
@@ -104,7 +107,10 @@ class FiestraPrincipal (QMainWindow):
 
         lblDireccionC = QLabel("Dirección de correo")
         txtDireccionC = QLineEdit()
+
         cajaH4.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+
         cajaH4.addWidget(lblDireccionC)
         cajaH4.addWidget(txtDireccionC)
 
@@ -118,6 +124,7 @@ class FiestraPrincipal (QMainWindow):
         btnEditar = QPushButton("Editar")
         btnEditar.pressed.connect(self.boton_editar_clicked)
         btnBorrar = QPushButton("Borrar")
+        btnBorrar.pressed.connect(self.boton_borrar_clicked)
         btnPorDefecto = QPushButton("Por Defecto")
         cajaH5.setAlignment(Qt.AlignmentFlag.AlignLeft)
         cajaH5.addWidget(btnEngadir)
@@ -144,7 +151,6 @@ class FiestraPrincipal (QMainWindow):
         nome = self.txtNome.text()  # Cambiado de self.miInputNome a self.txtNome
         apelidos = self.txtApelido.text()
         tlf = self.txtTelefono.text()
-        #campos = (nome, apelidos, tlf)
         self.lstDireccionC.addItem(f"{nome}, {apelidos}, {tlf}")
         self.txtNome.setText("")
         self.txtApelido.setText("")
@@ -171,6 +177,21 @@ class FiestraPrincipal (QMainWindow):
             print("Has seleccionado Texto Plano")
         elif self.rbtPersonalizado.isChecked():
             print("Has seleccionado Personalizado")
+
+    def mostrar_formato_seleccionado(self, index):
+        formato_seleccionado = self.cmbFormato.itemText(index)
+
+        print(f"Usuario seleccionó el formato: {formato_seleccionado}")
+
+    def boton_borrar_clicked(self):
+        indice = self.lstDireccionC.currentRow()
+
+
+        if indice != -1:
+            self.lstDireccionC.takeItem(indice)
+            print("Borrado con exito")
+        else:
+            print("No hay ningún elemento seleccionado para borrar")
 
 
 if __name__ == "__main__":
