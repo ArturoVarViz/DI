@@ -25,6 +25,7 @@ class PrimeraVentana(QMainWindow):
         caja3.addWidget(lblIconCd)
         chkAnimation=QCheckBox("animation")
         caja3.addWidget(chkAnimation)
+
         lswLista=QListView()
         lswLista.setFixedSize(400,350)
         cajaH1.addWidget(lswLista)
