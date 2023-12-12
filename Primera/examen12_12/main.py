@@ -5,8 +5,8 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QLabel, QListWidget, QPushButton, QComboBox, QLineEdit,
                              QRadioButton, QWidget, QVBoxLayout, QHBoxLayout, QListView)
 
-import VentanaQt
-from EjemploQListView import tareaModelo
+
+
 
 class tareaModelo(QAbstractListModel):
     def __init__(self, tarea=None):
