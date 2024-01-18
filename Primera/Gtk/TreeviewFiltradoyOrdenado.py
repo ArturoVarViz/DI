@@ -1,204 +1,313 @@
 import gi
+from gi.overrides.Gdk import Gdk
 
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Pango
-import sqlite3 as dbapi  # para imprimir los datos del SQLite
+gi.require_version("Gtk","3.0")
+from gi.repository import Gtk
+import sqlite3 as dbapi
 
-
-class VentanaPrincipal(Gtk.Window):
+class ventanaPrincipal(Gtk.Window):
     def __init__(self):
         super().__init__()
-        self.set_title("Ejemplo Treeview Filtrado y Ordenado")
-        self.set_default_size(500, 300)  # Ajusta el tamaño según tus necesidades
-        self.set_border_width(10)
-        cajaPrincipal = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        self.set_title("Ejemplo de TreeView Filtrado")
 
-        # Parte izquierda (TreeView)
-        cajaIzquierda = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        self.filtradoGenero = "None"
+        self.set_default_size(250, 100)
+        self.set_border_width(10)
+
+        cajaV = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        cajaPrincipal = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        cajaPrincipal.pack_start(cajaV, True, True, 0)
+
+        # Parte TREEVIEW
+        self.filtradoXenero = "None"
         modelo = Gtk.ListStore(str, str, int, str, bool)
         modelo_filtrado = modelo.filter_new()
-        modelo_filtrado.set_visible_func(self.filtro_usuarios_genero)
+        modelo_filtrado.set_visible_func(self.filtro_usuarios_xenero)
 
-        # Conexión a la base de datos
         try:
             bbdd = dbapi.connect("baseDatos2.dat")
             cursor = bbdd.cursor()
-            cursor.execute("SELECT * FROM usuarios")
+            cursor.execute("select * from usuarios")
             for fila in cursor:
                 modelo.append(fila)
-        except dbapi.Error as e:
-            print(e)
         except dbapi.DatabaseError as e:
-            print("Error al cargar la base de datos")
+            print("Erro insertando usuarios: " + e)
         finally:
-            cursor.close()
-            bbdd.close()
+             cursor.close()
+             bbdd.close()
 
-        tryDatosUsuarios = Gtk.TreeView(model=modelo_filtrado)
-        seleccion = tryDatosUsuarios.get_selection()
 
-        for i, tituloColumna in enumerate(["Dni", "Nome"]):
+        #trvDatosUsarios = Gtk.TreeView(model=modelo)
+        ventanaScroll = Gtk.ScrolledWindow()
+        ventanaScroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        ventanaScroll.set_size_request(300, 150)
+        trvDatosUsarios = Gtk.TreeView(model=modelo_filtrado)  # Ver commits para entender cuando he usado un modelo y cuando otro.
+        seleccion = trvDatosUsarios.get_selection()
+        ventanaScroll.add(trvDatosUsarios)
+
+        for i, tituloColumna in enumerate(["Dni", "Nome"]):#Aqui pongo las columnas que quiero que se muestren. La i es la posicion de la columna en la tupla y el titulo es el nombre de la columna.
             celda = Gtk.CellRendererText()
-            columna = Gtk.TreeViewColumn(tituloColumna, celda, text=i)
-            tryDatosUsuarios.append_column(columna)
+            columna = Gtk.TreeViewColumn(tituloColumna, celda, text=i)# Para la columna necesito el titulo, la celda y el texto. El texto es la posicion de la columna en la tupla.
+            trvDatosUsarios.append_column(columna)
 
-        celda = Gtk.CellRendererProgress()
-        columna = Gtk.TreeViewColumn("Edade", celda, value=2)
-        tryDatosUsuarios.append_column(columna)
+            celda = Gtk.CellRendererProgress()
+            columna = Gtk.TreeViewColumn("Edade", celda, value=2)
+            trvDatosUsarios.append_column(columna)
 
+        # Combo con un modelo
         modeloCombo = Gtk.ListStore(str)
-        modeloCombo.append(("Home",))
+        modeloCombo.append(("Home",))# Fijarme en que pongo una coma al final. Es una tupla de un elemento.
         modeloCombo.append(("Muller",))
         modeloCombo.append(("Outro",))
-        celda = Gtk.CellRendererCombo()
+        celda = Gtk.CellRendererCombo()# Para la barra de combo del porcentaje
         celda.set_property("editable", True)
         celda.props.model = modeloCombo
-        celda.set_property("text-column", 0)
-        celda.set_property("has-entry", False)
-      #  celda.connect("edited", self.on_celdaGenero_edited, modelo_filtrado, 3)
+        #celda.set_property("model", modeloCombo)# Es lo mismo que la linea de arriba
+        celda.set_property("text-column", 0)# La columna que quiero que se muestre es la 0, la primera.
+        celda.set_property("has-entry", False)# Para que no se pueda escribir en el combo
+        celda.connect("edited", self.on_celdaXenero_edited, modelo_filtrado, 3)
 
         columna = Gtk.TreeViewColumn("Xenero", celda, text=3)
-        tryDatosUsuarios.append_column(columna)
+        trvDatosUsarios.append_column(columna)
+        cajaV.pack_start(ventanaScroll, True, True, 2)
 
-        cajaIzquierda.pack_start(tryDatosUsuarios, True, True, 2)
+        cajaH = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing=2)
+        cajaV.pack_start(cajaH, True, True, 0)
 
-        cajaH = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-        cajaIzquierda.pack_start(cajaH, True, True, 0)
+        rbtHome = Gtk.RadioButton( label ="Home")
+        rbtMuller = Gtk.RadioButton.new_with_label_from_widget(rbtHome, label = "Muller")
+        rbtOutros = Gtk.RadioButton.new_with_label_from_widget(rbtHome, label ="Outro")
+        cajaH.pack_start(rbtHome, True, True, 2)
+        cajaH.pack_start(rbtMuller, True, True, 2)
+        cajaH.pack_start(rbtOutros, True, True, 2)
+        rbtHome.connect("toggled", self.on_xenero_toggled,"Home", modelo_filtrado)
+        rbtMuller.connect("toggled", self.on_xenero_toggled, "Muller",  modelo_filtrado)
+        rbtOutros.connect("toggled", self.on_xenero_toggled, "Outro", modelo_filtrado)
 
-        rbtHombre = Gtk.RadioButton(label="Home")
-        rbtMujer = Gtk.RadioButton.new_with_label_from_widget(rbtHombre, label="Muller")
-        rbtOtro = Gtk.RadioButton.new_with_label_from_widget(rbtHombre, label="Outro")
-        cajaH.pack_start(rbtHombre, True, True, 2)
-        cajaH.pack_start(rbtMujer, True, True, 2)
-        cajaH.pack_start(rbtOtro, True, True, 2)
-        rbtHombre.connect("toggled", self.on_genero_toggled, "Home", modelo_filtrado)
-        rbtMujer.connect("toggled", self.on_genero_toggled, "Muller", modelo_filtrado)
-        rbtOtro.connect("toggled", self.on_genero_toggled, "Outro", modelo_filtrado)
+        # Parte GRID
+        grid = Gtk.Grid()
+        cajaPrincipal.pack_start(grid, True, True, 0)
+        self.lblNome = Gtk.Label(label="Nome")
+        self.txtNome = Gtk.Entry()
+        self.lblNome = Gtk.Label(label="Nome")
+        self.txtNome = Gtk.Entry()
+        self.lblDni = Gtk.Label(label="Dni")
+        self.txtDni = Gtk.Entry()
+        self.lblDni = Gtk.Label(label="Dni")
+        self.txtDni = Gtk.Entry()
+        self.lblEdade = Gtk.Label(label="Edade")
+        self.txtEdade = Gtk.Entry()
+        self.lblXenero = Gtk.Label(label="Xenero")
+        self.cmbXenero = Gtk.ComboBox()
+        self.cmbXenero.set_model(modeloCombo)# Le asigno el modelo que cree antes
+        celda = Gtk.CellRendererText()  # Para la barra de combo del porcentaje
+        #celda.set_property("editable", False)# Digo que no quiero que sea editable
+        self.cmbXenero.pack_start(celda, True)
+        self.cmbXenero.add_attribute(celda, "text", 0)# La columna que quiero que se muestre es la 0, la primera.
+        self.chkFalecido = Gtk.CheckButton(label="Falecido")
+        self.btnNovo = Gtk.Button(label="Novo")
+        self.btnNovo.connect("clicked", self.on_btnNovo_clicked)
+        self.btnEditar = Gtk.Button(label="Editar")
+        self.btnEditar.connect("clicked", self.on_btnEditar_clicked, seleccion)
+        self.btnAceptar = Gtk.Button(label="Aceptar")
+        self.btnAceptar.connect("clicked", self.on_btnAceptar_clicked, modelo, seleccion)
+        self.btnCancelar = Gtk.Button(label="Cancelar")
+        self.btnCancelar.connect("clicked", self.on_btnCancelar_clicked)
+        self.deshabilitarControles()
 
-        cajaDerecha = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        grid.add(self.lblNome)# Con add
+        grid.attach(self.txtNome,1,0,3,1)# Pongo 3 en width porque quiero que ocupe 3 columnas y sea mas larga la caja de texto.
+        grid.attach_next_to(self.lblDni, self.lblNome, Gtk.PositionType.BOTTOM, 1, 1)# Con attach_next_to es el widget, el widget al que se pone al lado, la posicion, el numero de columnas y el numero de filas.
+        grid.attach_next_to(self.txtDni, self.lblDni, Gtk.PositionType.RIGHT, 1, 1)
+        grid.attach_next_to(self.lblEdade, self.txtDni, Gtk.PositionType.RIGHT, 1, 1)
+        grid.attach_next_to(self.txtEdade, self.lblEdade, Gtk.PositionType.RIGHT, 1, 1)
+        grid.attach_next_to(self.lblXenero, self.lblDni, Gtk.PositionType.BOTTOM, 1, 1)
+        grid.attach_next_to(self.cmbXenero, self.lblXenero, Gtk.PositionType.RIGHT, 1, 1)
+        grid.attach_next_to(self.chkFalecido, self.txtEdade, Gtk.PositionType.BOTTOM, 2, 1)
+        cajaH2 = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing=5)
+        cajaH2.pack_start(self.btnNovo, True, True, 1)# Diferencia entre False, True que True, True
+        cajaH2.pack_start(self.btnEditar, True, True, 1)
+        cajaH2.pack_start(self.btnAceptar, True, True, 1)
+        cajaH2.pack_start(self.btnCancelar, True, True, 1)
+        grid.attach_next_to(cajaH2, self.lblXenero, Gtk.PositionType.BOTTOM, 4, 1)# Pongo la caja horizontal 2, que tiene los botones, debajo de la etiqueta de xenero
 
-        lblNombre = Gtk.Label(label="Nome:")
-        entryNombre = Gtk.Entry()
-        lblDNI = Gtk.Label(label="DNI:")
-        entryDNI = Gtk.Entry()
-        lblEdad = Gtk.Label(label="Edade:")
-        entryEdad = Gtk.Entry()
 
-        lblGenero = Gtk.Label(label="Xenero:")
-        rbtHombre1 = Gtk.RadioButton(label="Home")
-        rbtMujer1 = Gtk.RadioButton.new_with_label_from_widget(rbtHombre, label="Muller")
-        rbtOtro1 = Gtk.RadioButton.new_with_label_from_widget(rbtHombre, label="Outro")
-
-        cajaDerecha.pack_start(lblNombre, False, False, 0)
-        cajaDerecha.pack_start(entryNombre, False, False, 0)
-        cajaDerecha.pack_start(lblDNI, False, False, 0)
-        cajaDerecha.pack_start(entryDNI, False, False, 0)
-        cajaDerecha.pack_start(lblEdad, False, False, 0)
-        cajaDerecha.pack_start(entryEdad, False, False, 0)
-        cajaDerecha.pack_start(lblGenero, False, False, 0)
-        cajaDerecha.pack_start(rbtHombre1, False, False, 0)
-        cajaDerecha.pack_start(rbtMujer1, False, False, 0)
-        cajaDerecha.pack_start(rbtOtro1, False, False, 0)
-
-     
-
-        # Botones
-        btnEditar = Gtk.Button(label="Editar")
-        btnEditar.connect("clicked", self.on_btn_editar_clicked)
-        btnAnadir = Gtk.Button(label="Añadir")
-        btnAnadir.connect("clicked", self.on_btn_anadir_clicked)
-        btnAceptar = Gtk.Button(label="Aceptar")
-        btnAceptar.connect("clicked", self.on_btn_aceptar_clicked)
-        btnCancelar = Gtk.Button(label="Cancelar")
-        btnCancelar.connect("clicked", self.on_btn_cancelar_clicked)
-        btnAceptar.set_sensitive(False)
-        btnCancelar.set_sensitive(False)
-        # Caja para los botones con orientación horizontal
-        cajaBotones = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        cajaBotones.pack_start(btnEditar, False, False, 0)
-        cajaBotones.pack_start(btnAnadir, False, False, 0)
-        cajaBotones.pack_start(btnAceptar, False, False, 0)
-        cajaBotones.pack_start(btnCancelar, False, False, 0)
-
-        # Añadir la caja de botones a la caja derecha
-        cajaDerecha.pack_start(cajaBotones, False, False, 0)
-
-        cajaPrincipal.pack_start(cajaIzquierda, True, True, 2)
-        cajaPrincipal.pack_start(cajaDerecha, False, False, 2)
 
         self.add(cajaPrincipal)
-
         self.connect("delete-event", Gtk.main_quit)
         self.show_all()
 
-    def on_genero_toggled(self, botonSeleccionado, genero, modelo):
-        if botonSeleccionado.get_active():
-            self.filtradoGenero = genero
-            modelo.refilter()
+    def validar_dni(self, dni):
+        # Verificar si el DNI tiene el formato correcto
+        if not (len(dni) == 9 and dni[:8].isdigit() and dni[8].isalpha()):
+            return False
 
-    def filtro_usuarios_genero(self, modelo, fila, datos):
-        if self.filtradoGenero is None or self.filtradoGenero == "None":
-            return True
-        else:
-            return modelo[fila][3] == self.filtradoGenero
+        # Calcular el dígito de control
+        letras = 'TRWAGMYFPDXBNJZSQVHLCKE'
+        numero = int(dni[:8])
+        resto = numero % 23
 
-
-
-    def on_btn_editar_clicked(self, widget):
-        # Activar los botones Aceptar y Cancelar
-        btnAceptar.set_sensitive(True)
-        btnCancelar.set_sensitive(True)
-        # Desactivar los botones Editar y Añadir
-        btnEditar.set_sensitive(False)
-        btnAnadir.set_sensitive(False)
-
-    def on_btn_anadir_clicked(self, widget):
-        # Activar los botones Aceptar y Cancelar
-        btnAceptar.set_sensitive(True)
-        btnCancelar.set_sensitive(True)
-        # Desactivar los botones Editar y Añadir
-        btnEditar.set_sensitive(False)
-        btnAnadir.set_sensitive(False)
-
-    def on_btn_aceptar_clicked(self, widget):
-        # Desactivar los botones Aceptar y Cancelar
-        btnAceptar.set_sensitive(False)
-        btnCancelar.set_sensitive(False)
-        # Activar los botones Editar y Añadir
-        btnEditar.set_sensitive(True)
-        btnAnadir.set_sensitive(True)
-
-    def on_btn_cancelar_clicked(self, widget):
-        # Desactivar los botones Aceptar y Cancelar
-        btnAceptar.set_sensitive(False)
-        btnCancelar.set_sensitive(False)
-        # Activar los botones Editar y Añadir
-        btnEditar.set_sensitive(True)
-        btnAnadir.set_sensitive(True)
-
-
-def on_celdaGenero_edited(self, celda, fila, texto, modelo, columna):
+        # Verificar si el dígito de control es válido
+        return dni[8] == letras[resto]
+    def validar_nombre(self, nombre):
+        return not any(char.isdigit() for char in nombre)
+    def on_celdaXenero_edited(self, celda, fila, texto, modelo, columna):# Para cambiar el valor de la columna xenero. Es un comboBox.
         try:
             bbdd = dbapi.connect("baseDatos2.dat")
             cursor = bbdd.cursor()
-            cursor.execute("UPDATE usuarios SET xenero=? WHERE dni=?",
-                           (texto, modelo[fila][0]))
+            cursor.execute("UPDATE usuarios set xenero = ? where dni = ?", (texto, modelo[fila][0]))
             bbdd.commit()
-        except dbapi.Error as e:
-            print(e)
         except dbapi.DatabaseError as e:
-            print("Error al cargar la base de datos")
+            print("Erro insertando usuarios: " + e)
         finally:
             cursor.close()
             bbdd.close()
-
         modelo[fila][columna] = texto
         modelo.refilter()
 
+    def on_xenero_toggled(self, botonSeleccionado, xenero, modelo):
+        if botonSeleccionado.get_active():
+            self.filtradoXenero = xenero
+            modelo.refilter()
+
+
+    def filtro_usuarios_xenero(self, modelo, fila, datos):
+        if self.filtradoXenero is None or self.filtradoXenero == "None":
+            return True
+        else:
+            return modelo[fila][3] == self.filtradoXenero
+
+
+    def on_btnNovo_clicked(self, control): # Control es el boton que se pulso y que se pasa como parametro automaticamente.
+        self.operacion = "Novo"
+        self.habilitarControles()
+        self.btnEditar.set_sensitive(False)
+        self.btnNovo.set_sensitive(False)
+
+    def on_btnCancelar_clicked(self, control):
+        self.operacion = None
+        self.limpiarControles()
+        self.deshabilitarControles()
+        self.btnEditar.set_sensitive(True)
+        self.btnNovo.set_sensitive(True)
+
+    def on_btnAceptar_clicked(self, control, modelo, seleccion):
+        nome = self.txtNome.get_text()
+        dni = self.txtDni.get_text()
+        edade = self.txtEdade.get_text()
+        idXenero = self.cmbXenero.get_active()
+        modeloXenero = self.cmbXenero.get_model()
+        xenero = modeloXenero[idXenero][0]
+        falecido = self.chkFalecido.get_active()
+        datos = (dni, nome, int(edade), xenero, falecido)
+
+        # Validar el DNI
+        if not self.validar_dni(dni):
+            # Mostrar etiqueta en rojo indicando DNI incorrecto
+            self.lblDni.set_text("Dni (formato incorrecto)")
+            return
+        else:
+            # Restaurar la apariencia normal de la etiqueta
+            self.lblDni.set_text("Dni")
+            self.lblDni.override_color(Gtk.StateFlags.NORMAL, None)
+
+        # Validar el nombre
+        if not self.validar_nombre(nome):
+            # Mostrar etiqueta en rojo indicando formato incorrecto
+            self.lblNome.set_text("Nome (formato incorrecto)")
+            return
+        else:
+            # Restaurar la apariencia normal de la etiqueta
+            self.lblNome.set_text("Nome")
+            self.lblNome.override_color(Gtk.StateFlags.NORMAL, None)
+
+        # Validar la edad (puedes agregar tu propia lógica de validación aquí)
+
+        # Si llega a este punto, todos los campos están validados
+        try:
+            bbdd = dbapi.connect("baseDatos2.dat")
+            cursor = bbdd.cursor()
+            if self.operacion == "Novo":
+                modelo.append(datos)
+                cursor.execute("insert into usuarios values(?,?,?,?,?)", datos)
+            if self.operacion == "Editar":
+                modelo, fila = seleccion.get_selected()
+                dniAnt = modelo[fila][0]
+                modelo[fila][0] = dni
+                modelo[fila][1] = nome
+                modelo[fila][2] = int(edade)
+                modelo[fila][3] = xenero
+                modelo[fila][4] = falecido
+                datosUp = (dni, nome, int(edade), xenero, falecido, dniAnt)
+                cursor.execute("UPDATE usuarios set dni=?, nome = ?, edade = ?, xenero = ?, falecido = ? where dni = ?",
+                               datosUp)
+            bbdd.commit()
+        except dbapi.DatabaseError as e:
+            print("Erro insertando usuarios: " + e)
+        finally:
+            cursor.close()
+            bbdd.close()
+            self.limpiarControles()
+            self.deshabilitarControles()
+            self.btnEditar.set_sensitive(True)
+            self.btnNovo.set_sensitive(True)
 
 
 
-if __name__ == "__main__":
-    VentanaPrincipal()
+    def on_btnEditar_clicked(self, control, seleccion):
+        self.operacion = "Editar"
+        self.habilitarControles()
+        self.btnNovo.set_sensitive(False)
+        self.btnEditar.set_sensitive(False)
+        modelo,fila = seleccion.get_selected()
+        self.txtDni.set_text(modelo[fila][0])
+        self.txtNome.set_text(modelo[fila][1])
+        self.txtEdade.set_text(str(modelo[fila][2]))
+        xen=modelo[fila][3]
+        modeloXenero = self.cmbXenero.get_model()
+        for i, elemento in enumerate(modeloXenero):
+            if elemento[0] == xen:
+                self.cmbXenero.set_active(i)
+                break
+        self.chkFalecido.set_active(modelo[fila][4])
+
+
+    def limpiarControles(self):
+        self.txtNome.set_text("")
+        self.txtDni.set_text("")
+        self.txtEdade.set_text("")
+        self.cmbXenero.set_active(-1)
+        self.chkFalecido.set_active(False)
+
+    def habilitarControles(self):
+        self.lblNome.set_sensitive(True)
+        self.txtNome.set_sensitive(True)
+        self.lblDni.set_sensitive(True)
+        self.txtDni.set_sensitive(True)
+        self.lblEdade.set_sensitive(True)
+        self.txtEdade.set_sensitive(True)
+        self.lblXenero.set_sensitive(True)
+        self.cmbXenero.set_sensitive(True)
+        self.chkFalecido.set_sensitive(True)
+        self.btnAceptar.set_sensitive(True)
+        self.btnCancelar.set_sensitive(True)
+        self.chkFalecido.set_sensitive(True)
+
+    def deshabilitarControles(self):
+        self.lblNome.set_sensitive(False)
+        self.txtNome.set_sensitive(False)
+        self.lblDni.set_sensitive(False)
+        self.txtDni.set_sensitive(False)
+        self.lblEdade.set_sensitive(False)
+        self.txtEdade.set_sensitive(False)
+        self.lblXenero.set_sensitive(False)
+        self.cmbXenero.set_sensitive(False)
+        self.chkFalecido.set_sensitive(False)
+        self.btnAceptar.set_sensitive(False)
+        self.btnCancelar.set_sensitive(False)
+        self.chkFalecido.set_sensitive(False)
+
+
+
+if __name__ =="__main__":
+    ventanaPrincipal()
     Gtk.main()
