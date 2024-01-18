@@ -220,38 +220,47 @@ class ventanaPrincipal(Gtk.Window):
             self.lblNome.set_text("Nome")
             self.lblNome.override_color(Gtk.StateFlags.NORMAL, None)
 
-        # Validar la edad (puedes agregar tu propia lógica de validación aquí)
+        if self.datosCorrectos(dni,edade):
+             datos = (dni, nome, int(edade), xenero, falecido)
+             # Si llega a este punto, todos los campos están validados
+             try:
+                 bbdd = dbapi.connect("baseDatos2.dat")
+                 cursor = bbdd.cursor()
+                 if self.operacion == "Novo":
+                     modelo.append(datos)
+                     cursor.execute("insert into usuarios values(?,?,?,?,?)", datos)
+                 if self.operacion == "Editar":
+                     modelo, fila = seleccion.get_selected()
+                     dniAnt = modelo[fila][0]
+                     modelo[fila][0] = dni
+                     modelo[fila][1] = nome
+                     modelo[fila][2] = int(edade)
+                     modelo[fila][3] = xenero
+                     modelo[fila][4] = falecido
+                     datosUp = (dni, nome, int(edade), xenero, falecido, dniAnt)
+                     cursor.execute(
+                         "UPDATE usuarios set dni=?, nome = ?, edade = ?, xenero = ?, falecido = ? where dni = ?",
+                         datosUp)
+                 bbdd.commit()
+             except dbapi.DatabaseError as e:
+                 print("Erro insertando usuarios: " + e)
+             finally:
+                 cursor.close()
+                 bbdd.close()
+                 self.limpiarControles()
+                 self.deshabilitarControles()
+                 self.btnEditar.set_sensitive(True)
+                 self.btnNovo.set_sensitive(True)
 
-        # Si llega a este punto, todos los campos están validados
-        try:
-            bbdd = dbapi.connect("baseDatos2.dat")
-            cursor = bbdd.cursor()
-            if self.operacion == "Novo":
-                modelo.append(datos)
-                cursor.execute("insert into usuarios values(?,?,?,?,?)", datos)
-            if self.operacion == "Editar":
-                modelo, fila = seleccion.get_selected()
-                dniAnt = modelo[fila][0]
-                modelo[fila][0] = dni
-                modelo[fila][1] = nome
-                modelo[fila][2] = int(edade)
-                modelo[fila][3] = xenero
-                modelo[fila][4] = falecido
-                datosUp = (dni, nome, int(edade), xenero, falecido, dniAnt)
-                cursor.execute("UPDATE usuarios set dni=?, nome = ?, edade = ?, xenero = ?, falecido = ? where dni = ?",
-                               datosUp)
-            bbdd.commit()
-        except dbapi.DatabaseError as e:
-            print("Erro insertando usuarios: " + e)
-        finally:
-            cursor.close()
-            bbdd.close()
-            self.limpiarControles()
-            self.deshabilitarControles()
-            self.btnEditar.set_sensitive(True)
-            self.btnNovo.set_sensitive(True)
 
-
+    def datosCorrectos(self,dni,edade):
+        correctos = True
+        if edade.isdigit():
+            if int(edade) < 0 or int(edade) >200:
+                dni.set_name("edade")
+            else:
+                dni.set_name("edadeErro")
+            return correctos
 
     def on_btnEditar_clicked(self, control, seleccion):
         self.operacion = "Editar"
