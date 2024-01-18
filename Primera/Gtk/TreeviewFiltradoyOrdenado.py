@@ -257,9 +257,9 @@ class ventanaPrincipal(Gtk.Window):
         correctos = True
         if edade.isdigit():
             if int(edade) < 0 or int(edade) >200:
-                dni.set_name("edade")
+               self.txtEdade.set_name("edade")
             else:
-                dni.set_name("edadeErro")
+               self.txtEdade.set_name("edadeErro")
             return correctos
 
     def on_btnEditar_clicked(self, control, seleccion):
