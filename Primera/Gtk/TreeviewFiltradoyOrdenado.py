@@ -1,8 +1,9 @@
 import gi
+
 from gi.overrides.Gdk import Gdk
 
 gi.require_version("Gtk","3.0")
-from gi.repository import Gtk
+from gi.repository import Gtk,GLib
 import sqlite3 as dbapi
 
 class ventanaPrincipal(Gtk.Window):
@@ -88,6 +89,7 @@ class ventanaPrincipal(Gtk.Window):
         cajaPrincipal.pack_start(grid, True, True, 0)
         self.lblNome = Gtk.Label(label="Nome")
         self.txtNome = Gtk.Entry()
+        self.txtNome.set_tooltip_text("nome da persoa")
         self.lblNome = Gtk.Label(label="Nome")
         self.txtNome = Gtk.Entry()
         self.lblDni = Gtk.Label(label="Dni")
@@ -104,7 +106,7 @@ class ventanaPrincipal(Gtk.Window):
         self.cmbXenero.pack_start(celda, True)
         self.cmbXenero.add_attribute(celda, "text", 0)# La columna que quiero que se muestre es la 0, la primera.
         self.chkFalecido = Gtk.CheckButton(label="Falecido")
-        self.btnNovo = Gtk.Button(label="Novo")
+        self.btnNovo = Gtk.Button.new_with_mnemonic(label="_Novo")
         self.btnNovo.connect("clicked", self.on_btnNovo_clicked)
         self.btnEditar = Gtk.Button(label="Editar")
         self.btnEditar.connect("clicked", self.on_btnEditar_clicked, seleccion)
@@ -129,7 +131,12 @@ class ventanaPrincipal(Gtk.Window):
         cajaH2.pack_start(self.btnAceptar, True, True, 1)
         cajaH2.pack_start(self.btnCancelar, True, True, 1)
         grid.attach_next_to(cajaH2, self.lblXenero, Gtk.PositionType.BOTTOM, 4, 1)# Pongo la caja horizontal 2, que tiene los botones, debajo de la etiqueta de xenero
-
+        self.spinner=Gtk.Spinner()
+        self.spinner.hide()
+        self.barraProgreso = Gtk.ProgressBar()
+        grid.attach_next_to(self.barraProgreso, cajaH2, Gtk.PositionType.BOTTOM, 4, 1)
+        self.contadorActividade=0
+        self.temporizador=GLib.timeout_add(15, self.on_contador,None)
 
 
         self.add(cajaPrincipal)
@@ -176,7 +183,10 @@ class ventanaPrincipal(Gtk.Window):
         else:
             return modelo[fila][3] == self.filtradoXenero
 
-
+    def on_contador(self,datoExtendidosUsuario):
+        if self.contadorActividade>0:
+            self.barraProgreso.pulse
+            self.contadorActividade = self.contadorActividade -1
     def on_btnNovo_clicked(self, control): # Control es el boton que se pulso y que se pasa como parametro automaticamente.
         self.operacion = "Novo"
         self.habilitarControles()
@@ -199,6 +209,8 @@ class ventanaPrincipal(Gtk.Window):
         xenero = modeloXenero[idXenero][0]
         falecido = self.chkFalecido.get_active()
         datos = (dni, nome, int(edade), xenero, falecido)
+        self.contadorActividade=5
+        self.seleccion = seleccion
 
         # Validar el DNI
         if not self.validar_dni(dni):
